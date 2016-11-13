@@ -1,45 +1,101 @@
 package com.creation.haasith.bicycleapp;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
 
 import java.util.Calendar;
 
+import static android.app.Activity.RESULT_OK;
+import static com.creation.haasith.bicycleapp.R.id.postVehicleMap;
 
-public class PostVehicleFragment extends Fragment implements OnMapReadyCallback, DatePickerDialog.OnDateSetListener, View.OnClickListener
+
+public class PostVehicleFragment extends Fragment implements OnMapReadyCallback, DatePickerDialog.OnDateSetListener, View.OnClickListener, LocationListener, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener
 {
     private EditText priceET, extraNotesET;
-    private Button startDateButton,endDateButton;
+    private Button startDateButton, endDateButton;
     private TextView startDateTV, endDateTV;
     private Spinner vehicleTypeSpinner;
     boolean switchDateDialog;
+    private ImageButton vehicleImagePosted;
+    PostedVehicle ps;
+    private Uri imageUri;
 
+    private ProgressDialog vehiclePostProgress;
+
+    private StorageReference storageReference;
+
+    LocationRequest mLocationRequest;
+
+    LatLng currentPosition;
+
+
+    private FirebaseAuth.AuthStateListener mAuthListener;
+    private FirebaseAuth mAuth;
+
+    private TextView fillerPicText;
+
+    Location mLastLocation;
+    double lat = 0.0, lng = 0.0;
+
+    GoogleMap mMap;
+
+    Marker mCurrLocationMarker;
+
+
+    protected GoogleApiClient mGoogleApiClient;
+
+
+    private final static int GALLERY_IMAGE = 1;
+
+    String vehicleType = "";
 
     private FragmentActivity myContext;
 
@@ -53,8 +109,9 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
 
 
     @Override
-    public void onAttach(Activity activity) {
-        myContext=(FragmentActivity) activity;
+    public void onAttach(Activity activity)
+    {
+        myContext = (FragmentActivity) activity;
         super.onAttach(activity);
     }
 
@@ -69,19 +126,24 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
         endDateButton = (Button) v.findViewById(R.id.endDateButton);
         startDateTV = (TextView) v.findViewById(R.id.startDateTV);
         endDateTV = (TextView) v.findViewById(R.id.endDateTV);
+        vehicleImagePosted = (ImageButton) v.findViewById(R.id.postedVehicleImage);
+        fillerPicText = (TextView) v.findViewById(R.id.picfiller);
+
+
+        vehiclePostProgress = new ProgressDialog(getActivity());
+
+        setHasOptionsMenu(true);
 
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
 
-        priceET.setText("23.0");
+        mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
 
-        String price = priceET.getText().toString();
-
-        PostedVehicle ps = new PostedVehicle("a","v", "ddd",Double.parseDouble(price),0,0);
-
-
-        mDatabase.child("Posted Vehicles").setValue(ps);
 
         vehicleTypeSpinner = (Spinner) v.findViewById(R.id.vehicleTypeSpinner);
 
@@ -90,13 +152,125 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
 
         endDateButton.setOnClickListener(this);
 
+        setUpSpinner();
+
+        vehicleImagePosted.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                fillerPicText.setText("");
+                Intent getImage = new Intent(Intent.ACTION_GET_CONTENT);
+                getImage.setType("image/*");
+                startActivityForResult(getImage, GALLERY_IMAGE);
+
+            }
+        });
+
+        storageReference = FirebaseStorage.getInstance().getReference();
 
 
         return v;
     }
 
-    public void onClick(View view) {
-        switch (view.getId()) {
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == GALLERY_IMAGE && resultCode == RESULT_OK)
+        {
+            imageUri = data.getData();
+
+            vehicleImagePosted.setImageURI(imageUri);
+
+
+        }
+    }
+
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
+    {
+        inflater.inflate(R.menu.menu_add_vehicle, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        // Handle presses on the action bar items
+        switch (item.getItemId())
+        {
+            case R.id.postVehicleButton:
+
+                vehiclePostProgress.setMessage("Posting Vehicle");
+                vehiclePostProgress.show();
+                final String startDateText = startDateTV.getText().toString();
+                final String endDateText = endDateTV.getText().toString();
+                final double price = Double.parseDouble(priceET.getText().toString());
+                final String extraNotes = extraNotesET.getText().toString();
+
+
+                mAuth = FirebaseAuth.getInstance();
+
+                mAuthListener = new FirebaseAuth.AuthStateListener()
+                {
+                    @Override
+                    public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth)
+                    {
+                        FirebaseUser user = firebaseAuth.getCurrentUser();
+
+                        if (user != null)
+                        {
+
+                            final DatabaseReference dbChild = mDatabase.child("Vehicle posted");
+
+
+                            StorageReference filePath = storageReference.child("Posted Vehicles").child(imageUri.getLastPathSegment());
+
+                            filePath.putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>()
+                            {
+                                @Override
+                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot)
+                                {
+                                    Uri downloadUrl = taskSnapshot.getDownloadUrl();
+
+                                    ps = new PostedVehicle(downloadUrl.toString(), startDateText, endDateText, price, lat, lng, vehicleType, extraNotes);
+
+
+                                    Log.e("here", "JJK");
+
+                                    dbChild.push().setValue(ps);
+
+                                    vehiclePostProgress.dismiss();
+                                    Toast.makeText(getActivity(), "Successfully posted Vehicle", Toast.LENGTH_LONG).show();
+
+
+                                }
+                            });
+                        } else
+                        {
+                            Log.e("failed", "failed");
+                            Toast.makeText(getActivity(), "Failed to upload picture", Toast.LENGTH_LONG).show();
+                            vehiclePostProgress.dismiss();
+                        }
+                    }
+
+                };
+                mAuth.addAuthStateListener(mAuthListener);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+    public void onClick(View view)
+    {
+        switch (view.getId())
+        {
             case R.id.startDateButton:
                 switchDateDialog = false;
                 java.util.Calendar now = java.util.Calendar.getInstance();
@@ -130,10 +304,9 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
     {
         super.onViewCreated(view, savedInstanceState);
 
+        SupportMapFragment fragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(postVehicleMap);
 
 
-
-        SupportMapFragment fragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.postVehicleMap);
         fragment.getMapAsync(this);
     }
 
@@ -151,52 +324,49 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
         vehicleTypeSpinner.setAdapter(staticAdapter);
 
 
-        vehicleTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        vehicleTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+        {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
+            {
                 Log.v("item", (String) parent.getItemAtPosition(position));
 
                 String selectedItem = (String) parent.getItemAtPosition(position);
-                if(selectedItem.equals("Bicycle"))
+                if (selectedItem.equals("Bicycle"))
                 {
-                    Toast.makeText(getActivity(), "bicycle selected", Toast.LENGTH_SHORT).show();
+
+                    vehicleType = selectedItem;
 
 
+                } else if (selectedItem.equals("Skateboard"))
+                {
+                    vehicleType = selectedItem;
+
+
+                } else if (selectedItem.equals("Scooter"))
+                {
+                    vehicleType = selectedItem;
 
 
                 }
-                else if (selectedItem.equals("Skateboard"))
-                {
-                    Toast.makeText(getActivity(), "skateboard selected", Toast.LENGTH_SHORT).show();
-
-
-
-                }
-                else if(selectedItem.equals("Scooter"))
-                {
-                    Toast.makeText(getActivity(), "scooter selected", Toast.LENGTH_SHORT).show();
-
-
-
-                }
-
 
 
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
+            public void onNothingSelected(AdapterView<?> parent)
+            {
                 // TODO Auto-generated method stub
             }
         });
 
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap)
-    {
-        LatLng marker = new LatLng(37.87435, -122.257115);
 
+    @Override
+    public void onMapReady(final GoogleMap googleMap)
+    {
+        mMap = googleMap;
 
         if (ActivityCompat.checkSelfPermission(getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
         {
@@ -212,35 +382,140 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
         googleMap.setMyLocationEnabled(true);
 
 
-        googleMap.addMarker(new MarkerOptions()
-                .position(marker)
-                .title("Location for pick up")
-                .draggable(true)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+    }
 
 
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(marker, 16));
+    @Override
+    public void onLocationChanged(Location location)
+    {
+        mLastLocation = location;
+        if (mCurrLocationMarker != null) {
+            mCurrLocationMarker.remove();
+        }
 
+        //Place current location marker
+//        LatLng currentPositon = new LatLng(location.getLatitude(), location.getLongitude());
+//        MarkerOptions markerOptions = new MarkerOptions();
+//        markerOptions.position(currentPositon);
+//        markerOptions.title("Current Position");
+//        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+//        markerOptions.draggable(true);
+//        mCurrLocationMarker = mMap.addMarker(markerOptions);
+
+
+        final LatLng[] position = {new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude())};
+        mMap.addMarker(new MarkerOptions().position(position[0]).draggable(true).icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_directions_bike_black_24dp)));
+
+        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener()
+        {
+            @Override
+            public void onMarkerDragStart(Marker marker)
+            {
+
+            }
+
+            @Override
+            public void onMarkerDrag(Marker marker)
+            {
+
+                position[0] = marker.getPosition();
+                Log.e("THIS BETTER FUCKINGWO1", position[0].toString());
+
+
+            }
+
+            @Override
+            public void onMarkerDragEnd(Marker marker)
+            {
+                position[0] = marker.getPosition();
+                lat = position[0].latitude;
+                lng = position[0].longitude;
+                Log.e("THIS BETTER FUCKINGWO2", position[0].toString());
+
+
+            }
+        });
+
+
+
+        //move map camera
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(position[0]));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+
+        //stop location updates
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        }
     }
 
 
     @Override
     public void onDateSet(DatePickerDialog view, int year, int monthOfYear, int dayOfMonth)
     {
-        String date = "You picked the following date: "+dayOfMonth+"/"+(monthOfYear+1)+"/"+year;
+        String date = "You picked the following date: " + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year;
         Log.e("date", date);
-        if(!switchDateDialog)
+        if (!switchDateDialog)
         {
             //gets startdate
-            startDateTV.setText((monthOfYear + 1) + "/" + dayOfMonth  + "/" + year);
+            startDateTV.setText((monthOfYear + 1) + "/" + dayOfMonth + "/" + year);
 
-        }
-        else
+        } else
         {
             //gets endDate
-            endDateTV.setText((monthOfYear + 1) + "/" + dayOfMonth  + "/" + year);
+            endDateTV.setText((monthOfYear + 1) + "/" + dayOfMonth + "/" + year);
 
         }
+
+    }
+
+    @Override
+    public void onConnected(Bundle bundle)
+    {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        if (ActivityCompat.checkSelfPermission(getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+        {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        //stop location updates when Activity is no longer active
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i)
+    {
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult)
+    {
 
     }
 }

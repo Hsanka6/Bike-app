@@ -8,12 +8,36 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin">
+
+
+
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.creation.haasith.bicycleapp.PostVehicleFragment">
 
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="250dp">
+        <ImageButton
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/postedVehicleImage"
+            android:scaleType="fitXY"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Add Picture"
+            android:id="@+id/picfiller"
+            android:textSize="25sp"
+            android:gravity="center"/>
+
+
+    </FrameLayout>
     <TextView
         android:id="@+id/vehicle"
         android:textStyle="bold"

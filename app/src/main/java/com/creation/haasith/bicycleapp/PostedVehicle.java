@@ -6,14 +6,7 @@ package com.creation.haasith.bicycleapp;
 
 public class PostedVehicle
 {
-    String image;
-    String startDate;
-    String endDate;
-    double price;
-    double lat;
-    double lon;
-
-    public PostedVehicle(String image, String startDate, String endDate, double price, double lat, double lon)
+    public PostedVehicle(String image, String startDate, String endDate, double price, double lat, double lon, String vehicleType, String extraNotes)
     {
         this.image = image;
         this.startDate = startDate;
@@ -21,6 +14,38 @@ public class PostedVehicle
         this.price = price;
         this.lat = lat;
         this.lon = lon;
+        this.vehicleType = vehicleType;
+        this.extraNotes = extraNotes;
+    }
+
+    String image;
+    String startDate;
+    String endDate;
+    double price;
+    double lat;
+    double lon;
+    String vehicleType;
+    String extraNotes;
+
+
+    public String getExtraNotes()
+    {
+        return extraNotes;
+    }
+
+    public void setExtraNotes(String extraNotes)
+    {
+        this.extraNotes = extraNotes;
+    }
+
+    public String getVehicleType()
+    {
+        return vehicleType;
+    }
+
+    public void setVehicleType(String vehicleType)
+    {
+        this.vehicleType = vehicleType;
     }
 
     public String getImage()
