@@ -107,16 +107,16 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Locati
 
 
                 name.setText("Jan");
-                //vehicleImage.setBackgroundColor();
-                price.setText("$25");
+                vehicleImage.setImageResource(R.drawable.bicycle_posted);
+                price.setText("$10/hr");
 
                 return v;
             }
         });
 
-        LatLng marker = new LatLng(37.87435, -122.257115);
-        LatLng marker1 = new LatLng(37.87495, -122.257315);
-        LatLng marker2 = new LatLng(37.87415, -122.257515);
+        LatLng marker = new LatLng(37.868061, -122.250035);
+        LatLng marker1 = new LatLng(37.871485, -122.246851);
+        LatLng marker2 = new LatLng(37.869097, -122.256141);
 
 
 
@@ -145,12 +145,12 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, Locati
         googleMap.addMarker(new MarkerOptions()
                 .position(marker1)
                 .title("Yasushi's Bike")
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_directions_bike_white_24dp)));
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_directions_bike_black_24dp)));
 
         googleMap.addMarker(new MarkerOptions()
                 .position(marker2)
                 .title("Bernie's Bike")
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_directions_bike_white_24dp)));
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_directions_bike_black_24dp)));
 
 
 

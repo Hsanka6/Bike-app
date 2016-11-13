@@ -17,7 +17,8 @@
             android:layout_weight="1"
             android:layout_height="100dp"
             android:background="#000"
-            android:id="@+id/vehicleImage"/>
+            android:id="@+id/vehicleImage"
+            android:scaleType="fitXY"/>
            <TextView
                 android:layout_width="0dp"
                 android:layout_weight="1"

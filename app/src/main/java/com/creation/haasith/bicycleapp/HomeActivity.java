@@ -18,11 +18,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.squareup.picasso.Picasso;
 
 public class HomeActivity extends AppCompatActivity
 {
@@ -70,13 +72,22 @@ public class HomeActivity extends AppCompatActivity
         // Tie DrawerLayout events to the ActionBarToggle
         mDrawer.addDrawerListener(drawerToggle);
 
+        mAuth = FirebaseAuth.getInstance();
+
+        user = FirebaseAuth.getInstance().getCurrentUser();
+
+
         View headerLayout = nvDrawer.inflateHeaderView(R.layout.navigation_bar_layout);
         // We can now look up items within the header if needed
         final TextView header = (TextView) headerLayout.findViewById(R.id.header);
 
+        ImageView headerImage = (ImageView) headerLayout.findViewById(R.id.userHeaderImage);
+
+        Picasso.with(getApplicationContext()).load(user.getPhotoUrl()).into(headerImage);
 
 
-        mAuth = FirebaseAuth.getInstance();
+
+
 
 
 
@@ -159,7 +170,7 @@ public class HomeActivity extends AppCompatActivity
         switch(menuItem.getItemId()) {
             case R.id.nav_first_fragment:
                 fragmentClass = HomeFragment.class;
-                setTitle("Home");
+                setTitle("Find Ride");
                 break;
             case R.id.nav_second_fragment:
                 fragmentClass = PostVehicleFragment.class;

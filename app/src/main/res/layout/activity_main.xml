@@ -10,7 +10,7 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bicycle"/>
+        android:background="@drawable/sexy2"/>
 
 
     <com.google.android.gms.common.SignInButton
@@ -19,17 +19,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="WheelUp"
-        android:textSize="35dp"
-        android:textStyle="bold"
-        android:textColor="#000000"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="91dp"
-        android:id="@+id/textView"/>
 
 
 </RelativeLayout>

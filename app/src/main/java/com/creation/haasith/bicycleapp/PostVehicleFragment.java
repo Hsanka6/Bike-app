@@ -420,7 +420,6 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
             {
 
                 position[0] = marker.getPosition();
-                Log.e("THIS BETTER FUCKINGWO1", position[0].toString());
 
 
             }
@@ -431,7 +430,6 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
                 position[0] = marker.getPosition();
                 lat = position[0].latitude;
                 lng = position[0].longitude;
-                Log.e("THIS BETTER FUCKINGWO2", position[0].toString());
 
 
             }
@@ -441,7 +439,7 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
 
         //move map camera
         mMap.moveCamera(CameraUpdateFactory.newLatLng(position[0]));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
 
         //stop location updates
         if (mGoogleApiClient != null) {

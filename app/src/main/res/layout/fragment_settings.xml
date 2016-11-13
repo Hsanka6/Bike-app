@@ -97,7 +97,7 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:id="@+id/startDateTV"
-            android:text="0/0/0000"/>
+            android:text=""/>
 
 
     </RelativeLayout>
@@ -123,7 +123,7 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:id="@+id/endDateTV"
-            android:text="0/0/0000"/>
+            android:text=""/>
 
 
     </RelativeLayout>
