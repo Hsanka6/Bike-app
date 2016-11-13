@@ -162,7 +162,7 @@ public class HomeActivity extends AppCompatActivity
                 setTitle("Home");
                 break;
             case R.id.nav_second_fragment:
-                fragmentClass = settings.class;
+                fragmentClass = PostVehicleFragment.class;
                 setTitle("Settings");
                 break;
             default:

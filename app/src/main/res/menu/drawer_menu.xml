@@ -7,7 +7,7 @@
             android:title="Home" />
         <item
             android:id="@+id/nav_second_fragment"
-            android:title="Settings" />
+            android:title="Post Vehicle" />
 
         <item
             android:id="@+id/logOut"
