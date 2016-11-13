@@ -25,6 +25,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
 
 import java.util.Calendar;
@@ -41,7 +43,8 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
 
     private FragmentActivity myContext;
 
-
+    private DatabaseReference mDatabase;
+// ...
 
     public PostVehicleFragment()
     {
@@ -68,13 +71,24 @@ public class PostVehicleFragment extends Fragment implements OnMapReadyCallback,
         endDateTV = (TextView) v.findViewById(R.id.endDateTV);
 
 
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+
+
+        priceET.setText("23.0");
+
+        String price = priceET.getText().toString();
+
+        PostedVehicle ps = new PostedVehicle("a","v", "ddd",Double.parseDouble(price),0,0);
+
+
+        mDatabase.child("Posted Vehicles").setValue(ps);
+
         vehicleTypeSpinner = (Spinner) v.findViewById(R.id.vehicleTypeSpinner);
 
         startDateButton.setOnClickListener(this);
 
 
         endDateButton.setOnClickListener(this);
-
 
 
 

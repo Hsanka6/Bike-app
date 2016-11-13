@@ -13,6 +13,16 @@ public class PostedVehicle
     double lat;
     double lon;
 
+    public PostedVehicle(String image, String startDate, String endDate, double price, double lat, double lon)
+    {
+        this.image = image;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.price = price;
+        this.lat = lat;
+        this.lon = lon;
+    }
+
     public String getImage()
     {
         return image;
